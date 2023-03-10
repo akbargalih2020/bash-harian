@@ -1,0 +1,5 @@
+spawn ssh [nama_user@nama_host]
+expect "*Password:"
+send "[PASSWORD]\r"
+expect "*[nama_user@nama_host]*"
+interact

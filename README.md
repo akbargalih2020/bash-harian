@@ -1,2 +1,2 @@
 # bash-harian
-catatan command terminal menggunakan macos BigSur
+catatan command terminal menggunakan macos Monterey

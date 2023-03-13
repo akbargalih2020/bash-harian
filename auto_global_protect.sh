@@ -10,7 +10,7 @@ osascript <<EOF
       if exists (first UI element whose title is "Connect") then
         tell (first UI element whose title is "Connect") to if exists then click
       else
-        tell (first UI element whose title is "Disconnect") to if exists then set message to "VPN is connecting."
+        tell (first UI element whose title is "Disconnect") to if exists then set message to "VPN is connected."
       end if
     end tell
     say message
@@ -19,7 +19,22 @@ osascript <<EOF
   end tell
 EOF
 }
-
+check_toggle() {
+    osascript << EOF
+tell application "System Events" to tell process "GlobalProtect"
+        click menu bar item 1 of menu bar 2 -- Activates the GlobalProtect "window" in the menubar
+        set frontmost to true -- keep window 1 active
+        tell window 1
+          -- Find the status
+          tell (first UI element whose title is "Connect") to if exists then set message to "globalprotect restarted"
+          tell (first UI element whose title is "Disconnect") to if exists then set message to "globalprotect started."
+        end tell
+        click menu bar item 1 of menu bar 2 -- This will close the GlobalProtect "window" after clicking Connect/Disconnect. This is optional.
+        say message
+        return message
+end tell
+EOF
+}
 
 tell_gp() {
 case $# in
@@ -56,7 +71,7 @@ case $# in
 esac
 }
 try_gp() {
-  output=$(gp-connect)
+  output=$(gp-connect | grep -v "execution error")
   while true; do
     if echo $output | grep "connect"; then
         echo "vpn connected"
@@ -64,15 +79,14 @@ try_gp() {
         break
     else
          echo "vpn not connected yet, try again;"
-         output=$(gp-connect)
+         output=$(gp-connect | grep -v "execution error")
          sleep 30
     fi
   done
 }
 check_gp() {
-  if pgrep -l Global | grep [G]lobalProtect; then
-    echo "masih login"
-  else
+  toggle=$(check_toggle)
+  if echo $toggle | grep "restart" ; then
     echo "sudah logout"
     read -p "re-login? (y/n) " yn
       case $yn in
@@ -83,6 +97,8 @@ check_gp() {
         * ) echo "invalid response"
             ;;
       esac
+  else
+    echo "masih login"
   fi
 }
 
@@ -90,7 +106,6 @@ prompt() {
  read -p "running globalprotect? (y/n) " yn
     case $yn in
       y ) echo "ok, proceed now;"
-#          try_gp
           ;;
       n ) echo "ok, see you;"
           exit ;;
@@ -99,15 +114,17 @@ prompt() {
 }
 n=0
 prompt;
+if pgrep -l Global | grep [G]lobalProtect; then
+  echo "app globalprotect still running"
+else
+  echo "run globalprotect;"
+  tell_gp start
+  echo "wait a second"
+  sleep 20
+  try_gp
+fi
+
 while true ; do
-  if pgrep -l Global | grep [G]lobalProtect; then
-    echo "masih ada proses GlobalProtect,cek status;"
-    check_gp;
-    sleep 60
-  else
-    echo "belum ada proses globalprotect,start proses!"
-    tell_gp start
-    sleep 10
-    try_gp;
-  fi
+  check_gp ;
+  sleep 60
 done

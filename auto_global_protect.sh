@@ -113,10 +113,10 @@ prompt() {
     esac
 }
 n=0
-prompt;
 if pgrep -l Global | grep [G]lobalProtect; then
   echo "app globalprotect still running"
 else
+  prompt;
   echo "run globalprotect;"
   tell_gp start
   echo "wait a second"

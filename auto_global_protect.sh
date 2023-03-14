@@ -126,5 +126,5 @@ fi
 
 while true ; do
   check_gp ;
-  sleep 60
+  sleep 1800
 done
